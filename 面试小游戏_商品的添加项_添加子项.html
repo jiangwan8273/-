@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>仓库管理</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        p {
+            margin: 0;
+            padding: 0;
+        }
+
+        .el-input {
+            width: 200px !important;
+            margin: 4px 10px 4px 0;
+        }
+
+        .el-button {
+            margin: 10px;
+        }
+
+        .spSonDiv {
+            margin: 10px 0;
+            border: 1px solid rgb(233, 212, 21);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<style>
+
+</style>
+
+<body>
+    <div id="app">
+        <el-row>
+            <el-col :span="12">
+                <el-button type="warning" @click="addSp">添加规格</el-button>
+                <div v-for="(i,index) in spDataList" :key="i.id">
+                    <el-input v-model.trim="i.name" size="mini" placeholder="请输入内容"></el-input>
+                    <el-button type="warning" size="mini" @click="savaSp(i.name)">保存</el-button>
+                    <el-button type="warning" size="mini" @click="deleteSp(index,i.name);!i.name?false:getALLData()">
+                        删除{{i.id}}</el-button>
+                </div>
+                <!-- 项信息 -->
+                <div class="spSonDiv" v-for="i in spSonList" :key="i.id">
+                    <p style="text-decoration:underline">{{i.sonName}}</p>
+                    <el-button type="warning" size="mini" @click="addSpSon(i.id)">添加规格子项</el-button>
+                    <div v-for="(val,i1) in i.sonArr" :key="i1">
+                        <span>{{i.sonName}}项{{i1}}</span>
+                        <el-input v-model.trim="val.son2Name" size="mini" placeholder="请输入内容"></el-input>
+                        <el-button type="warning" size="mini" @click="deleSpSon2(val,i,i.sonName)">移除</el-button>
+                    </div>
+                </div>
+            </el-col>
+            <el-col :span="12">
+                <el-button type="warning" @click="getALLData">刷新规格</el-button>
+                <div class="spSonDiv" v-show="ifShow === true ? true : false">
+                    <el-row>
+                        <p>
+                            <el-col :span="12">规格项</el-col>
+                            <el-col :span="12">
+                                <el-row>
+                                    <el-col :span="12">库存</el-col>
+                                    <el-col :span="12">售价</el-col>
+                                </el-row>
+                            </el-col>
+                        </p>
+                        <p v-for="(i,index) in showAll" :key="index">
+                            <el-col :span="12">
+                                <span>{{i}}</span>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-row>
+                                    <el-col :span="12">
+                                        <input type="text" />
+                                    </el-col>
+                                    <el-col :span="12">
+                                        <input type="text" />
+                                    </el-col>
+                                </el-row>
+                            </el-col>
+                        </p>
+                    </el-row>
+                </div>
+            </el-col>
+        </el-row>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: function () {
+                return {
+                    qId: 0,
+                    spDataList: [],
+                    spSonList: [],
+                    allspSonList: [],
+                    rightList: [],
+                    showArr: [],
+                    showAll: [],
+                    ifShow: false
+                }
+            },
+            watch: {
+                showAll: {
+                    handler: function (newVal, oldVal) {
+                        if (!newVal) {
+                            this.ifShow = false
+                        }
+                    }
+                }
+            },
+            methods: {
+                // 封装一个公共方法
+                querySon() { },
+                // 添加规格
+                addSp() {
+                    const val = this.spDataList.length
+                    this.$set(this.spDataList, val, {})
+                    this.$set(this.spDataList[val], 'id', this.qId)
+                    this.qId++
+                    this.$set(this.spDataList[val], 'name', '')
+                    // this.$set(this.spDataList[val], 'spSonList', {})
+                    this.$forceUpdate()
+                },
+                // 规格项，保存
+                savaSp(val) {
+                    // val:传参保存内容,index:传参数组序列号
+                    if (!val) {
+                        alert('输入项才能保存')
+                    } else {
+                        // 只能存在一个子项，有责提醒用户
+                        const ifs = this.spSonList.find((e) => {
+                            return val === e.sonName
+                        })
+                        if (ifs) {
+                            return alert('项已存在')
+                        }
+                        // 保存规格传递
+
+                        const res = this.spSonList.length
+                        this.$set(this.spSonList, res, {})
+                        this.$set(this.spSonList[res], 'id', this.qId)
+                        this.qId++
+                        this.$set(this.spSonList[res], 'sonName', val)
+                        this.$set(this.spSonList[res], 'sonArr', [])
+
+                        // All数组元素添加子属性
+                        const resLen = this.allspSonList.length
+                        this.$set(this.allspSonList, resLen, {})
+                        this.$set(this.allspSonList[resLen], 'name', val)
+                    }
+                },
+                // 规格项，删除
+                deleteSp(val, name) {
+                    // name:删除元素内容
+                    // 删除规格子元素
+                    this.spDataList.splice(val, 1)
+                    this.$forceUpdate()
+                    // 遍历删除所有是规格项的子元素
+                    if (name) {
+                        this.spSonList.forEach((v, index, arr) => {
+                            if (name === v.sonName) {
+                                arr.splice(index, 1)
+                            }
+                        })
+                        // 遍历删除All数组元素子属性
+                        const res = this.allspSonList.findIndex((e) => {
+                            return e.name === name
+                        })
+                        if (res !== -1) {
+                            this.allspSonList.splice(res, 1)
+                        }
+                    }
+                },
+
+                // 提那家规格子元素项
+                addSpSon(val) {
+                    const arrVal = this.spSonList.find((res) => {
+                        return res.id === val
+                    })
+
+                    const arrlen = arrVal.sonArr.length
+
+                    this.$set(arrVal.sonArr, arrlen, {})
+                    this.$set(arrVal.sonArr[arrlen], 'id', this.qId)
+                    this.qId++
+                    this.$set(arrVal.sonArr[arrlen], 'son2Name', '')
+                },
+                deleSpSon2(idVal, i, name) {
+                    // idVal:传递过来删除内容，i:传递过来要删除所属父元素
+                    i.sonArr.forEach((e, index, arr) => {
+                        if (idVal.id === e.id) {
+                            arr.splice(index, 1)
+                        }
+                    })
+                },
+                // 获取 左侧列表项所有父子元素
+                getALLData() {
+                    // 获取一个子项数组，子数组只包含数组内容
+                    const arrNO = this.spSonList.map((e2, index, arr) => {
+                        const SonArr = []
+                        this.spSonList[index].sonArr.forEach((e3) => {
+                            SonArr.push(e3.son2Name)
+                        })
+                        return SonArr
+                    })
+                    // 定义循环方法
+                    function calculate(arr) {
+                        const len = arr.length
+                        // 当数组大于等于2个的时候
+                        if (len >= 2) {
+                            const len1 = arr[0].length
+                            const len2 = arr[1].length
+                            const lenBoth = len1 * len2
+                            const items = new Array(lenBoth)
+                            let index = 0
+                            for (let i = 0; i < len1; i++) {
+                                for (let j = 0; j < len2; j++) {
+                                    if (arr[0][i] instanceof Array) {
+                                        items[index] = arr[0][i] + '_' + arr[1][j]
+                                    } else {
+                                        items[index] = arr[0][i] + '_' + arr[1][j]
+                                    }
+                                    index++
+                                }
+                            }
+                            const newArr = new Array(len - 1)
+                            for (let i = 2; i < arr.length; i++) {
+                                newArr[i - 1] = arr[i]
+                            }
+                            newArr[0] = items
+                            return calculate(newArr)
+                        } else {
+                            return arr[0]
+                        }
+                    }
+                    // 赋值,关闭隐藏效果
+                    this.showAll = calculate(arrNO)
+                    this.ifShow = true
+                }
+            }
+
+        })
+    </script>
+</body>
+
+</html>
